@@ -5,6 +5,7 @@
 ## AddOnVersion: 100
 ## Description: Ever pressed Magelight in a dungeon?
 ## DependsOn: LibAddonMenu-2.0
+## SavedVariables: SkillBlockerVars
 
 SkillBlocker.lua
 
