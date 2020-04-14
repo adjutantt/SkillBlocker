@@ -7,6 +7,7 @@
 ## DependsOn: LibAddonMenu-2.0
 ## SavedVariables: SkillBlockerVars
 
+bindings.xml
 SkillBlocker.lua
 
 ; This Add-on is not created by, affiliated with or sponsored by ZeniMax

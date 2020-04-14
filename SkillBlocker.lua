@@ -6,7 +6,7 @@ blocker.savedVariables = {}
 blocker.variableVersion = 3
 
 blocker.default = {
-	displayAlert = true,
+	displayAlert = false,
 	logToChat = true
 }
 
@@ -94,7 +94,7 @@ local function toggleLock(lock)
   	end
   	drawLocks()
 end
-  
+
 local function loadLocks()
 	for i = 1, 6 do
     	local lock = CreateControl(string.format("lock%d", i), ZO_SkillsAssignableActionBar, CT_BUTTON)
@@ -124,9 +124,19 @@ local function alert()
 	end
 end
 
+function blocker.unlockAll()
+	for i = 1, 6 do
+		blocker.lock[i].mainBarLocked = false
+		blocker.lock[i].offBarLocked = false
+	end
+	drawLocks()
+	PlaySound(SOUNDS.INVENTORY_ITEM_UNLOCKED)
+end
+
 local function Initialize()
 	EVENT_MANAGER:UnregisterForEvent(blocker.name, EVENT_ADD_ON_LOADED)
 	blocker.savedVariables = ZO_SavedVars:NewAccountWide("SkillBlockerVars", blocker.variableVersion, nil, blocker.default)
+	ZO_CreateStringId("SI_BINDING_NAME_UNLOCK_ALL", "Unlock all skills")
 	LAM:RegisterAddonPanel("Skill Blocker", panelData)
 	LAM:RegisterOptionControls("Skill Blocker", optionsData)
   	currentHotbar = ACTION_BAR_ASSIGNMENT_MANAGER:GetCurrentHotbarCategory()
