@@ -3,7 +3,7 @@ blocker = {}
 blocker.lock = {}
 
 local ADDON_NAME = "SkillBlocker"
-local ADDON_VERSION	= "1.0"
+local ADDON_VERSION	= "1.0a"
 local ESOUI_URL = "https://www.esoui.com/downloads/info2619-SkillBlocker.html"
 local currentHotbar
 local flag = true -- flip-flop for prehook control
@@ -284,4 +284,4 @@ local function OnAddOnLoaded(event, addonName)
   	end
 end
 
-EVENT_MANAGER:RegisterForEvent(blocker.name, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
+EVENT_MANAGER:RegisterForEvent(ADDON_NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
