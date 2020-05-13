@@ -1,4 +1,4 @@
-# SkillBlocker
+# Skill Blocker
 
 This addon adds little lock buttons to your Skills menu. Locked skills cannot be cast to ensure that Inner Light or Repentance stays in your bar only for stats. No more accidental casts!
 
