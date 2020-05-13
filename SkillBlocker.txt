@@ -4,7 +4,7 @@
 ## Version: 1.0
 ## AddOnVersion: 100
 ## Description: Ever pressed Magelight in a dungeon?
-## DependsOn: LibAddonMenu-2.0
+## DependsOn: LibAddonMenu-2.0>=28
 ## SavedVariables: SkillBlockerVars
 
 bindings.xml
