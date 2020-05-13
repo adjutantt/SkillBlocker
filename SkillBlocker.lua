@@ -1,46 +1,45 @@
 blocker = {}
-blocker.name = "SkillBlocker"
 
 blocker.lock = {}
+
+local ADDON_NAME = "SkillBlocker"
+local ADDON_VERSION	= "1.0"
+local ESOUI_URL = "https://www.esoui.com/downloads/info2619-SkillBlocker.html"
 local currentHotbar
 local flag = true -- flip-flop for prehook control
 
 --==============================SavedVariables==============================--
 
-local variableVersion = 2
+local variableVersion = 4
 local savedVarsName = "SkillBlockerVars"
 
 local defaults = {
-	settingsAccountWide = false,
+	settingsAccountWide = true,
 	displayAlert = false,
 	logToChat = true,
 	rememberLocks = true,
+	alertLogin = true,
 
-	-- skills
+	mainBarSaved = { 
+		[1] = false,
+ 		[2] = false, 
+		[3] = false, 
+		[4] = false, 
+		[5] = false, 
+		[6] = false
+	},
 
-
-mainBarSaved = { 
-	[1] = false,
- 	[2] = true, 
-	[3] = false, 
-	[4] = true, 
-	[5] = false, 
-	[6] = true
-},
-
-offBarSaved = { 
-	[1] = true,
- 	[2] = false, 
-	[3] = true, 
-	[4] = false, 
-	[5] = true, 
-	[6] = false
+	offBarSaved = { 
+		[1] = false,
+ 		[2] = false, 
+		[3] = false, 
+		[4] = false, 
+		[5] = false, 
+		[6] = false
+	}
 }
 
-
-}
-
-local function GetSettings()
+local function getSettings()
 	if blocker.settings.settingsAccountWide then
 		return blocker.globalSettings
     else
@@ -48,7 +47,7 @@ local function GetSettings()
   end
 end
 
-blocker.GetSettings = GetSettings
+blocker.getSettings = getSettings
 
 --==============================LibAddonMenu==============================--
 
@@ -58,9 +57,8 @@ local panelData = {
     type = "panel",
 	name = "Skill Blocker",
 	author = "@adjutant",
-	version = "1.0",
-	-- website = "https://www.esoui.com/downloads/***",
-    -- feedback = "https://www.esoui.com/downloads/***#comments",
+	version = ADDON_VERSION,
+	website = ESOUI_URL,
 }
 
 local optionsData = {
@@ -79,6 +77,7 @@ local optionsData = {
         getFunc = function() return blocker.settings.settingsAccountWide end,
         setFunc = function(value) blocker.settings.settingsAccountWide = value end,
         width = "full",
+        requiresReload = true
   	},
 
   	[3] = {
@@ -88,7 +87,7 @@ local optionsData = {
         width = "full",
     },
 
-    [4] = { -- header: Use global variables?
+    [4] = {
 			type    = "header",
 			name    = nil,
     },
@@ -97,19 +96,27 @@ local optionsData = {
         type = "checkbox",
         name = "Display alert:",
        	tooltip = "Display ZOS-like alert on locked skill cast attempt",
-        getFunc = function() return blocker.GetSettings().displayAlert end,
-        setFunc = function(value) blocker.GetSettings().displayAlert = value end,
+        getFunc = function() return blocker.getSettings().displayAlert end,
+        setFunc = function(value) blocker.getSettings().displayAlert = value end,
     },
 
     [6] = {
     	type = "checkbox",
     	name = "Log to chat:",
     	tooltip = "Log to chat on locked skill cast attempt",
-        getFunc = function() return blocker.GetSettings().logToChat end,
-        setFunc = function(value) blocker.GetSettings().logToChat = value end,
+        getFunc = function() return blocker.getSettings().logToChat end,
+        setFunc = function(value) blocker.getSettings().logToChat = value end,
     },
 
     [7] = {
+    	type = "checkbox",
+    	name = "Alert on login:",
+    	tooltip = "Display a chat message on login if you have saved locked skills",
+        getFunc = function() return blocker.getSettings().alertLogin end,
+        setFunc = function(value) blocker.getSettings().alertLogin = value end,
+    },
+
+    [8] = {
         type = "description",
         title = nil,
         text = "This addon is in active development. Feature requests and bug reports are very welcome! Please leave your comments at ESOUI.",
@@ -202,10 +209,10 @@ local function loadLocks() -- register lock controls and anchors
 end
 
 local function alert() -- called on locked skill cast attempt. More to come...?
-	if (blocker.GetSettings().displayAlert) then
+	if (blocker.getSettings().displayAlert) then
 		ZO_Alert(UI_displayAlert_CATEGORY_ERROR, SOUNDS.CHAMPION_PENDING_POINTS_CLEARED, SI_TRADEACTIONRESULT62)
 	end
-	if blocker.GetSettings().logToChat then
+	if blocker.getSettings().logToChat then
 		d("[Skill Blocker]: \""..GetAbilityName(GetSlotBoundId(slotNum)).."\" is locked")
 	end
 end
@@ -221,30 +228,38 @@ function blocker.unlockAll() -- hotkey
 end
 
 local function Initialize()
-	EVENT_MANAGER:UnregisterForEvent(blocker.name, EVENT_ADD_ON_LOADED)
+	EVENT_MANAGER:UnregisterForEvent(ADDON_NAME, EVENT_ADD_ON_LOADED)
 
 	ZO_CreateStringId("SI_BINDING_NAME_UNLOCK_ALL", "Unlock all skills")
 
-	blocker.settings        = ZO_SavedVars:New(             savedVarsName, variableVersion, "settings", defaults)
-  	blocker.globalSettings  = ZO_SavedVars:NewAccountWide(  savedVarsName,  variableVersion, "globals",  defaults)
+	blocker.settings = ZO_SavedVars:New(savedVarsName, variableVersion, "settings", defaults)
+  	blocker.globalSettings = ZO_SavedVars:NewAccountWide(savedVarsName, variableVersion, "globals", defaults)
 
---	blocker.savedVariables = ZO_SavedVars:NewAccountWide("SkillBlockerVars", blocker.variableVersion, nil, blocker.default)
 	LAM:RegisterAddonPanel("Skill Blocker", panelData)
 	LAM:RegisterOptionControls("Skill Blocker", optionsData)
 
   	currentHotbar = ACTION_BAR_ASSIGNMENT_MANAGER:GetCurrentHotbarCategory() -- get initial bar on login
 
   	loadLocks()
-  	if (blocker.globalSettings.settingsAccountWide == false and blocker.globalSettings.rememberLocks) then
-		d("[Skill Blocker]: Some of your skills are locked!")
+
+  	if (blocker.getSettings().rememberLocks) then
   		loadSaved()
+  		if (blocker.getSettings().alertLogin) then
+  			for i = 1, 6 do
+  				if (blocker.lock[i].mainBarLocked or blocker.lock[i].offBarLocked) then
+  					d("[Skill Blocker]: Some of your skills are locked!")
+  					break
+  				end
+  			end
+  		end
   	end
+
   	drawLocks()
 
   	ACTION_BAR_ASSIGNMENT_MANAGER:RegisterCallback("CurrentHotbarUpdated", -- to keep currentHotbar relevant
     function(hotbarCategory, oldHotbarCategory)
     	currentHotbar = hotbarCategory
-    	if SCENE_MANAGER:IsShowing("skills") then
+    	if SCENE_MANAGER:IsShowing("skills") then -- refresh textures if hotbar is swapped while in skills menu
         	drawLocks()
       	end
     end)
@@ -254,7 +269,7 @@ local function Initialize()
 		if flag then
 			slotNum = tonumber(debug.traceback():match('keybind = "ACTION_BUTTON_(%d)')) -- get pressed button
 			if (slotNum == 9 or GetSlotBoundId(slotNum) == 0) then return false end -- break if consumable or empty slot
-			if (currentHotbar == 0 and blocker.lock[slotNum - 2].mainBarLocked) or 
+				if (currentHotbar == 0 and blocker.lock[slotNum - 2].mainBarLocked) or 
 	   	    	(currentHotbar == 1 and blocker.lock[slotNum - 2].offBarLocked) then
 					alert() -- notify player
 					return true -- ESO won't run ability press if PreHook returns true
@@ -264,7 +279,7 @@ local function Initialize()
 end
 
 local function OnAddOnLoaded(event, addonName)
-	if addonName == blocker.name then
+	if addonName == ADDON_NAME then
     	Initialize()
   	end
 end
