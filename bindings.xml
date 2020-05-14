@@ -2,7 +2,7 @@
   <Layer name="SI_KEYBINDINGS_CATEGORY_GENERAL">
   	<Category name="Skill Blocker">
       <Action name="UNLOCK_ALL">
-        <Down>blocker.unlockAll()</Down>
+        <Down>SkillBlocker.unlockAll()</Down>
       </Action>
       </Category>
   </Layer>
